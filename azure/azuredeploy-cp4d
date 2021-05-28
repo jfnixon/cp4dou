@@ -267,6 +267,10 @@ if [ -z ${sshPublicKey} ]; then
     aborting "missing sshPublicKey (file); create ~/.ssh/id_rsa.pub or export the filename"
 fi
 
+if [ ! -r ${sshPublicKey} ]; then
+    aborting "sshPublicKey ($sshPublicKey) not found readable"
+fi
+
 if [ -z ${storageOption} ]; then
     storageOption="nfs" # nfs, ocs, portworx
 fi
