@@ -196,7 +196,7 @@
         },
         "virtualNetworkCIDR": {
             "type": "string",
-            "defaultValue": "10.72.0.0/17",
+            "defaultValue": "10.10.0.0/16",
             "metadata": {
                 "description": "VNet Address Prefix. Minimum address prefix is /24"
             }
@@ -486,7 +486,7 @@
         },
         "vTrue": true,
         "diagStorageAccountName_Orig": "[concat('diag', uniqueString(resourceGroup().id))]",
-        "diagStorageAccountName": "[concat(parameters('namePrefix'), 'storage1')]",
+        "diagStorageAccountName": "[concat(replace(parameters('namePrefix'),'-',''), 'storage1')]",
         "bastionPublicIpDnsLabel_Orig": "[concat('bastiondns', uniqueString(resourceGroup().id))]",
         "bastionPublicIpDnsLabel": "[concat(parameters('bastionHostname'), '-ip')]",
         "sshKeyPath": "[concat('/home/', parameters('adminUsername'), '/.ssh/authorized_keys')]",
