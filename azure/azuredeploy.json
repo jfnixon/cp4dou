@@ -916,7 +916,7 @@
                         "value": "[parameters('virtualNetworkName')]"
                     },
                     "virtualNetworkCIDR": {
-                        "value": "[parameters('virtualNetworkCIDR')[0]]"
+                        "value": "[parameters('virtualNetworkCIDR')]"
                     },
                     "pxSpecUrl": {
                         "value": "[parameters('pxSpecUrl')]"
