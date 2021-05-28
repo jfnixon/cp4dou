@@ -19,7 +19,9 @@ function usage() {
 }
 
 if [ "$1" == "" ]; then
-    usage
+    if [ "${dnsZone}" == "" ]; then
+        usage
+    fi
 fi
 
 while getopts "hg:n:p:z:" opt; do

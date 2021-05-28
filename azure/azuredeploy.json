@@ -174,15 +174,15 @@
             }
         },
         "clusterNetworkCIDR": {
-            "type": "array",
-            "defaultValue": ["10.128.0.0/14"],
+            "type": "string",
+            "defaultValue": "10.128.0.0/14",
             "metadata": {
                 "description": "Cluster (pod) Address Prefix. Minimum address prefix is /18"
             }
         },
         "serviceNetworkCIDR": {
-            "type": "array",
-            "defaultValue": ["10.11.0.0/16"],
+            "type": "string",
+            "defaultValue": "10.11.0.0/16",
             "metadata": {
                 "description": "Service Address Prefix. Minimum address prefix is /20"
             }
@@ -195,8 +195,8 @@
             }
         },
         "virtualNetworkCIDR": {
-            "type": "array",
-            "defaultValue": ["10.10.0.0/16"],
+            "type": "string",
+            "defaultValue": "10.10.0.0/16",
             "metadata": {
                 "description": "VNet Address Prefix. Minimum address prefix is /24"
             }
@@ -907,16 +907,16 @@
                         "value": "[parameters('pullSecret')]"
                     },
                     "clusterNetworkCIDR": {
-                        "value": "[parameters('clusterNetworkCIDR')[0]]"
+                        "value": "[parameters('clusterNetworkCIDR')]"
                     },
                     "serviceNetworkCIDR": {
-                        "value": "[parameters('serviceNetworkCIDR')[0]]"
+                        "value": "[parameters('serviceNetworkCIDR')]"
                     },
                     "virtualNetworkName": {
                         "value": "[parameters('virtualNetworkName')]"
                     },
                     "virtualNetworkCIDR": {
-                        "value": "[parameters('virtualNetworkCIDR')[0]]"
+                        "value": "[parameters('virtualNetworkCIDR')]"
                     },
                     "pxSpecUrl": {
                         "value": "[parameters('pxSpecUrl')]"
