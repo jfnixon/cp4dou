@@ -196,7 +196,7 @@
         },
         "virtualNetworkCIDR": {
             "type": "string",
-            "defaultValue": "10.10.0.0/16",
+            "defaultValue": "10.72.0.0/17",
             "metadata": {
                 "description": "VNet Address Prefix. Minimum address prefix is /24"
             }
@@ -543,7 +543,7 @@
             },
             "properties": {
                 "addressSpace": {
-                    "addressPrefixes": "[parameters('virtualNetworkCIDR')[0]]"
+                    "addressPrefixes": "[parameters('virtualNetworkCIDR')]"
                 },
                 "subnets": [
                     {
