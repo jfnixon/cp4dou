@@ -1,0 +1,4 @@
+*.env
+*log
+client
+cp4d*txt

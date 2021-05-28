@@ -1,0 +1,438 @@
+#!/bin/bash
+
+# 20210305, jtingiris
+
+# todo: additional flags for variables
+
+function aborting() {
+    echo
+    echo "aborting ... $@"
+    echo
+    exit 1
+}
+
+function usage() {
+    echo
+    echo "usage: $0 [-g <resource group name>] [-n <service principal name>] [-p <name prefix>] [-z <dns zone>]"
+    echo
+    exit 2
+}
+
+if [ "$1" == "" ]; then
+    usage
+fi
+
+while getopts "hg:n:p:z:" opt; do
+    case $opt in
+        g)
+            rgName=$OPTARG # optional service principle name
+            ;;
+        h)
+            usage
+            ;;
+        n)
+            spName=$OPTARG # optional service principle name
+            ;;
+        p)
+            namePrefix=$OPTARG # optional service principle name
+            ;;
+        z)
+            dnsZone=$OPTARG # optional service principle name
+            ;;
+        *)
+            usage
+            ;;
+    esac
+done
+
+# Init
+
+deployStart="$(date)"
+
+if [ -z ${namePrefix} ]; then
+    namePrefix=cp4d
+fi
+
+if [ -z ${rgName} ]; then
+    rgName="${namePrefix}-rg"
+fi
+
+if [ -z ${spName} ]; then
+    spName=${namePrefix}-sp
+fi
+
+spHttpName=http://$spName
+
+if [ -z ${aadClientId} ]; then
+    spData="$(az ad sp list --all | jq -r ".[] | select(.displayName==\"${spName}\")" 2> /dev/null)"
+
+    if [ ! -z "${spData}" ]; then
+        aadClientId=$(echo ${spData} | jq -r '.appId')
+    fi
+fi
+
+if [ -z ${aadClientId} ]; then
+    aborting "missing aadClientId; run bin/servicePrinciple.sh or export it"
+fi
+
+if [ -z ${apiKey} ]; then
+    if [ -f ${namePrefix}-entitlement-key.txt ]; then
+        apiKey=$(cat ${namePrefix}-entitlement-key.txt)
+    else
+        if [ -f secrets/${namePrefix}-entitlement-key.txt ]; then
+            apiKey=$(cat secrets/${namePrefix}-entitlement-key.txt)
+        else
+            if [ -f ../secrets/${namePrefix}-entitlement-key.txt ]; then
+                apiKey=$(cat ../secrets/${namePrefix}-entitlement-key.txt)
+            fi
+        fi
+    fi
+fi
+
+if [ -z ${apiKey} ]; then
+    aborting "missing apiKey; add secrets/${namePrefix}-entitlement-key.txt or export it"
+fi
+
+if [ -z ${aadClientSecret} ]; then
+    if [ -f ${spName}-secret.txt ]; then
+        aadClientSecret=$(cat ${spName}-secret.txt)
+    else
+        if [ -f secrets/${spName}-secret.txt ]; then
+            aadClientSecret=$(cat secrets/${spName}-secret.txt)
+        else
+            if [ -f ../secrets/${spName}-secret.txt ]; then
+                aadClientSecret=$(cat ../secrets/${spName}-secret.txt)
+            fi
+        fi
+    fi
+fi
+
+if [ -z ${aadClientSecret} ]; then
+    aborting "missing aadClientSecret; run bin/servicePrinciple.sh or export it"
+fi
+
+if [ -z ${openshiftUsername} ]; then
+    openshiftUsername="admin"
+fi
+
+if [ -z ${openshiftPassword} ]; then
+    if [ -f ${namePrefix}-openshift-password-${openshiftUsername}.txt ]; then
+        openshiftPassword=$(cat ${namePrefix}-openshift-password-${openshiftUsername}.txt)
+    else
+        if [ -f secrets/${namePrefix}-openshift-password-${openshiftUsername}.txt ]; then
+            openshiftPassword=$(cat secrets/${namePrefix}-openshift-password-${openshiftUsername}.txt)
+        else
+            if [ -f ../secrets/${namePrefix}-openshift-password-${openshiftUsername}.txt ]; then
+                openshiftPassword=$(cat ../secrets/${namePrefix}-openshift-password-${openshiftUsername}.txt)
+            fi
+        fi
+    fi
+fi
+
+if [ -z ${adminUsername} ]; then
+    adminUsername=$(logname)
+fi
+
+if [ -z ${openshiftPassword} ]; then
+    aborting "missing openshiftPassword; create secrets/${namePrefix}-openshift-password-${adminUsername}.txt or export it"
+fi
+
+if [ -z ${bastionHostname} ]; then
+    bastionHostname="${namePrefix}-bastion"
+fi
+
+if [ -z ${bastionSubnetName} ]; then
+    bastionSubnetName="${bastionHostname}-subnet"
+fi
+
+if [ -z ${bastionSubnetPrefix} ]; then
+    bastionSubnetPrefix="10.10.13.0/24"
+fi
+
+if [ -z ${bastionSecurityGroupName} ]; then
+    bastionSecurityGroupName="${bastionSubnetName}-nsg"
+fi
+
+if [ -z ${bastionVmSize} ]; then
+    bastionVmSize="Standard_D4s_v3"
+fi
+
+if [ -z ${clusterName} ]; then
+    clusterName="${namePrefix}"
+fi
+
+if [ -z ${clusterNetworkCIDR} ]; then
+    clusterNetworkCIDR="10.128.0.0/14"
+fi
+
+if [ -z ${dataDiskSize} ]; then
+    dataDiskSize="512" # 512, 1024, 2048
+fi
+
+if [ -z ${dnsZone} ]; then
+    dnsZone=example.com
+fi
+
+if [ -z ${dnsZoneRG} ]; then
+    dnsZoneRG=dns-rg
+fi
+
+if [ -z ${enableAutoscaler} ]; then
+    enableAutoscaler="false"
+fi
+
+if [ -z ${enableNfsBackup} ]; then
+    enableNfsBackup="false"
+fi
+
+if [ -z ${installWatsonKnowledgeCatalog} ]; then
+    installWatsonKnowledgeCatalog="yes"
+fi
+
+if [ -z ${location} ]; then
+    location="eastus"
+fi
+
+if [ -z ${masterInstanceCount} ]; then
+    masterInstanceCount="3"
+fi
+
+if [ -z ${masterSubnetName} ]; then
+    masterSubnetName="${namePrefix}-master-subnet"
+fi
+
+if [ -z ${masterSubnetPrefix} ]; then
+    masterSubnetPrefix="10.10.0.0/23"
+fi
+
+if [ -z ${masterSecurityGroupName} ]; then
+    masterSecurityGroupName="${masterSubnetName}-nsg"
+fi
+
+if [ -z ${masterVmSize} ]; then
+    masterVmSize="Standard_D8s_v3"
+fi
+
+if [ -z ${nfsHostname} ]; then
+    nfsHostname="${namePrefix}-nfs"
+fi
+
+if [ -z ${nfsVmSize} ]; then
+    nfsVmSize="Standard_D8s_v3"
+fi
+
+if [ -z ${privateOrPublicEndpoints} ]; then
+    privateOrPublicEndpoints="public"
+fi
+
+if [ -z ${projectName} ]; then
+    projectName="demo"
+fi
+
+if [ -z ${pullSecret} ]; then
+    if [ -f ${namePrefix}-pull-secret.txt ]; then
+        pullSecret=$(realpath ${namePrefix}-pull-secret.txt)
+    else
+        if [ -f secrets/${namePrefix}-pull-secret.txt ]; then
+            pullSecret=$(realpath secrets/${namePrefix}-pull-secret.txt)
+        else
+            if [ -f ../secrets/${namePrefix}-pull-secret.txt ]; then
+                pullSecret=$(realpath ../secrets/${namePrefix}-pull-secret.txt)
+            fi
+        fi
+    fi
+fi
+
+if [ -z ${openshiftPassword} ]; then
+    aborting "missing pullSecret (file); create secrets/${namePrefix}-pull-secret.txt or export the filename"
+fi
+
+if [ -z ${serviceNetworkCIDR} ]; then
+    serviceNetworkCIDR="10.11.0.0/16"
+fi
+
+if [ -z ${singleZoneOrMultiZone} ]; then
+    singleZoneOrMultiZone="noha" # az, noha
+fi
+
+if [ -z ${sshPublicKey} ]; then
+    if [ -r ~/.ssh/id_rsa.pub ]; then
+        sshPublicKey=$(realpath ~/.ssh/id_rsa.pub)
+    fi
+fi
+
+if [ -z ${sshPublicKey} ]; then
+    aborting "missing sshPublicKey (file); create ~/.ssh/id_rsa.pub or export the filename"
+fi
+
+if [ -z ${storageOption} ]; then
+    storageOption="nfs" # nfs, ocs, portworx
+fi
+
+if [ -z ${workerInstanceCount} ]; then
+    if [ "${storageOption}" == "ocs" ]; then
+        workerInstanceCount="4" # ocs pushes cp4d pod disruption budgets over (presumably) safe limits
+    else
+        workerInstanceCount="3"
+    fi
+fi
+
+if [ -z ${workerSubnetName} ]; then
+    workerSubnetName="${namePrefix}-worker-subnet"
+fi
+
+if [ -z ${workerSubnetPrefix} ]; then
+    workerSubnetPrefix="10.10.2.0/23"
+fi
+
+if [ -z ${workerSecurityGroupName} ]; then
+    workerSecurityGroupName="${workerSubnetName}-nsg"
+fi
+
+if [ -z ${workerVmSize} ]; then
+    workerVmSize="Standard_D16s_v3"
+fi
+
+if [ -z ${virtualNetworkCIDR} ]; then
+    virtualNetworkCIDR="10.10.0.0/16"
+fi
+
+if [ -z ${virtualNetworkName} ]; then
+    virtualNetworkName="${namePrefix}-vnet"
+fi
+
+# Main
+
+echo "namePrefix                    = ${namePrefix}"
+echo
+
+echo "location                      = ${location}"
+echo "rgName                        = ${rgName}"
+echo
+
+echo "clusterName                   = ${clusterName}"
+echo "dnsZone                       = ${dnsZone}"
+echo "dnsZoneRG                     = ${dnsZoneRG}"
+echo "enableAutoscaler              = ${enableAutoscaler}"
+echo "installWatsonKnowledgeCatalog = ${installWatsonKnowledgeCatalog}"
+echo "outboundType                  = Loadbalancer"
+echo "privateOrPublicEndpoints      = ${privateOrPublicEndpoints}"
+echo "projectName                   = ${projectName}"
+echo "pullSecret                    = @${pullSecret}"
+echo "singleZoneOrMultiZone         = ${singleZoneOrMultiZone}"
+echo
+
+echo "storageOption                 = ${storageOption}"
+echo
+
+echo "virtualNetworkName            = ${virtualNetworkName}"
+echo
+
+echo "bastionHostname               = ${bastionHostname}"
+echo "bastionSubnetPrefix           = ${bastionSubnetPrefix}"
+echo "bastionSubnetName             = ${bastionSubnetName}"
+echo "bastionSecurityGroupName      = ${bastionSecurityGroupName}"
+echo "bastionVmSize                 = ${bastionVmSize}"
+echo
+
+if [ "${storageOption}" == "nfs" ]; then
+    echo "nfsHostname                   = ${nfsHostname}"
+    echo "nfsVmSize                     = ${nfsVmSize}"
+    echo "dataDiskSize                  = ${dataDiskSize}"
+    echo "enableNfsBackup               = ${enableNfsBackup}"
+    echo
+fi
+
+echo "masterInstanceCount           = ${masterInstanceCount}"
+echo "masterSubnetPrefix            = ${masterSubnetPrefix}"
+echo "masterSubnetName              = ${masterSubnetName}"
+echo "masterSecurityGroupName       = ${masterSecurityGroupName}"
+echo "masterVmSize                  = ${masterVmSize}"
+echo
+
+echo "workerInstanceCount           = ${workerInstanceCount}"
+echo "workerSubnetPrefix            = ${workerSubnetPrefix}"
+echo "workerSubnetName              = ${workerSubnetName}"
+echo "workerSecurityGroupName       = ${workerSecurityGroupName}"
+echo "workerVmSize                  = ${workerVmSize}"
+
+echo "spName                        = ${spName}"
+echo "spHttpName                    = ${spHttpName}"
+echo
+
+echo "aadClientId                   = ${aadClientId}"
+echo "aadClientSecret               = ${aadClientSecret}"
+echo
+
+echo "adminUsername                 = ${adminUsername}"
+echo "sshPublicKey                  = ${sshPublicKey}"
+echo
+
+echo "openshiftUsername             = ${openshiftUsername}"
+echo "openshiftPassword             = ${openshiftPassword}"
+echo "apiKey                        = ${apiKey}"
+echo
+
+# https://raw.githubusercontent.com/josephtingiris/cp4d/main/azure/azuredeploy.json
+# https://${projectName}-cpd-${projectName}.apps.${clusterName}.${dnsZone}
+# https://console-openshift-console.apps.${clusterName}.${dnsZone}
+# verify quotas; az vm list-usage --location <region>
+
+templateUri="https://raw.githubusercontent.com/josephtingiris/cp4d/main/azure/azuredeploy.json"
+
+azArgs+="--resource-group ${rgName} "
+azArgs+="--template-uri ${templateUri} "
+azArgs+="--parameters "
+azArgs+="adminUsername=${adminUsername} "
+azArgs+="aadClientId=${aadClientId} "
+azArgs+="aadClientSecret=${aadClientSecret} "
+azArgs+="bastionHostname=${bastionHostname} "
+azArgs+="bastionSecurityGroupName=${bastionSecurityGroupName} "
+azArgs+="bastionSubnetName=${bastionSubnetName} "
+azArgs+="bastionSubnetPrefix=${bastionSubnetPrefix} "
+azArgs+="bastionVmSize=${bastionVmSize} "
+azArgs+="clusterName=${clusterName} "
+azArgs+="clusterNetworkCIDR=${clusterNetworkCIDR} "
+azArgs+="dataDiskSize=${dataDiskSize} "
+azArgs+="dnsZone=${dnsZone} "
+azArgs+="dnsZoneRG=${dnsZoneRG} "
+azArgs+="enableAutoscaler=${enableAutoscaler} "
+azArgs+="enableNfsBackup=${enableNfsBackup} "
+azArgs+="installWatsonKnowledgeCatalog=${installWatsonKnowledgeCatalog} "
+azArgs+="location=${location} "
+azArgs+="masterInstanceCount=${masterInstanceCount} "
+azArgs+="masterSecurityGroupName=${masterSecurityGroupName} "
+azArgs+="masterSubnetName=${masterSubnetName} "
+azArgs+="masterSubnetPrefix=${masterSubnetPrefix} "
+azArgs+="masterVmSize=${masterVmSize} "
+azArgs+="namePrefix=${namePrefix} "
+azArgs+="nfsHostname=${nfsHostname} "
+azArgs+="nfsVmSize=${nfsVmSize} "
+azArgs+="openshiftUsername=${openshiftUsername} "
+azArgs+="outboundType=Loadbalancer "
+azArgs+="privateOrPublicEndpoints=${privateOrPublicEndpoints} "
+azArgs+="projectName=${projectName} "
+azArgs+="pullSecret=@${pullSecret} "
+azArgs+="serviceNetworkCIDR=${serviceNetworkCIDR} "
+azArgs+="singleZoneOrMultiZone=${singleZoneOrMultiZone} "
+azArgs+="sshPublicKey=@${sshPublicKey} "
+azArgs+="storageOption=${storageOption} "
+azArgs+="workerInstanceCount=${workerInstanceCount} "
+azArgs+="workerSubnetName=${workerSubnetName} "
+azArgs+="workerSubnetPrefix=${workerSubnetPrefix} "
+azArgs+="workerSecurityGroupName=${workerSecurityGroupName} "
+azArgs+="workerVmSize=${workerVmSize} "
+azArgs+="virtualNetworkCIDR=${virtualNetworkCIDR} "
+azArgs+="virtualNetworkName=${virtualNetworkName} "
+azArgs+="cloudPakLicenseAgreement=accept"
+
+echo az deployment group create ${azArgs}
+echo
+
+az deployment group create ${azArgs}
+
+deployFinish="$(date)"
+
+echo "deployStart                 = ${deployStart}"
+echo "deployFinish                = ${deployFinish}"
+echo
