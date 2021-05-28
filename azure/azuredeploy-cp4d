@@ -426,7 +426,7 @@ azArgs+="workerSubnetName=${workerSubnetName} "
 azArgs+="workerSubnetPrefix=${workerSubnetPrefix} "
 azArgs+="workerSecurityGroupName=${workerSecurityGroupName} "
 azArgs+="workerVmSize=${workerVmSize} "
-azArgs+="virtualNetworkCIDR=${virtualNetworkCIDR} "
+azArgs+="virtualNetworkCIDR=(${virtualNetworkCIDR}) "
 azArgs+="virtualNetworkName=${virtualNetworkName} "
 azArgs+="cloudPakLicenseAgreement=accept"
 
