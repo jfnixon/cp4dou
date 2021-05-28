@@ -543,7 +543,7 @@
             },
             "properties": {
                 "addressSpace": {
-                    "addressPrefixes": "[parameters('virtualNetworkCIDR')]"
+                    "addressPrefixes": "[parameters('virtualNetworkCIDR')[0]]"
                 },
                 "subnets": [
                     {
@@ -914,6 +914,9 @@
                     },
                     "virtualNetworkName": {
                         "value": "[parameters('virtualNetworkName')]"
+                    },
+                    "virtualNetworkCIDR": {
+                        "value": "[parameters('virtualNetworkCIDR')]"
                     },
                     "pxSpecUrl": {
                         "value": "[parameters('pxSpecUrl')]"
