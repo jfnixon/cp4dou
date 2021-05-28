@@ -196,7 +196,7 @@
         },
         "virtualNetworkCIDR": {
             "type": "array",
-            "defaultValue": ["10.72.128.0/17"],
+            "defaultValue": ["10.10.0.0/16"],
             "metadata": {
                 "description": "VNet Address Prefix. Minimum address prefix is /24"
             }
