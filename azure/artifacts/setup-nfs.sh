@@ -1,4 +1,6 @@
 #!/bin/sh
+# fix broken microsoft certs
+yum -y update --disablerepo=* --enablerepo="*microsoft*"
 yum install -y nfs-utils
 yum install -y rpcbind
 systemctl unmask firewalld
