@@ -373,12 +373,12 @@ echo "openshiftPassword             = ${openshiftPassword}"
 echo "apiKey                        = ${apiKey}"
 echo
 
-# https://raw.githubusercontent.com/josephtingiris/cp4d/main/azure/azuredeploy.json
+# https://raw.githubusercontent.com/mitaei/cp4d/master/azure/azuredeploy.json
 # https://${projectName}-cpd-${projectName}.apps.${clusterName}.${dnsZone}
 # https://console-openshift-console.apps.${clusterName}.${dnsZone}
 # verify quotas; az vm list-usage --location <region>
 
-templateUri="https://raw.githubusercontent.com/josephtingiris/cp4d/main/azure/azuredeploy.json"
+templateUri="https://raw.githubusercontent.com/mitaei/cp4d/master/azure/azuredeploy.json"
 
 azArgs+="--resource-group ${rgName} "
 azArgs+="--template-uri ${templateUri} "
