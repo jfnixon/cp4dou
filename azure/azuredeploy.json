@@ -475,7 +475,7 @@
         "networkResourceGroup": "[parameters('existingVnetResourceGroupName')]",
         "redHatTags": {
             "app": "OpenshiftContainerPlatform",
-            "version": "4.5.x",
+            "version": "4.7.x",
             "platform": "AzurePublic"
         },
         "imageReference": {

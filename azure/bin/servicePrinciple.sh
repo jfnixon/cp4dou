@@ -140,4 +140,4 @@ az role assignment list -o table
 
 echo
 
-# az ad sb delete --id $spHttpName
+# az ad sp delete --id $spHttpName
