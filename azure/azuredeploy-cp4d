@@ -77,15 +77,19 @@ if [ -z ${aadClientId} ]; then
     aborting "missing aadClientId; run bin/servicePrinciple.sh or export it"
 fi
 
+if [ -z ${secretsDir} ]; then
+    secretsDir=secrets
+fi
+
 if [ -z ${aadClientSecret} ]; then
     if [ -f ${spName}-secret.txt ]; then
         aadClientSecret=$(cat ${spName}-secret.txt)
     else
-        if [ -f secrets/${spName}-secret.txt ]; then
-            aadClientSecret=$(cat secrets/${spName}-secret.txt)
+        if [ -f ${secretsDir}/${spName}-secret.txt ]; then
+            aadClientSecret=$(cat ${secretsDir}/${spName}-secret.txt)
         else
-            if [ -f ../secrets/${spName}-secret.txt ]; then
-                aadClientSecret=$(cat ../secrets/${spName}-secret.txt)
+            if [ -f ../${secretsDir}/${spName}-secret.txt ]; then
+                aadClientSecret=$(cat ../${secretsDir}/${spName}-secret.txt)
             fi
         fi
     fi
@@ -99,18 +103,18 @@ if [ -z ${apiKey} ]; then
     if [ -f ${namePrefix}-entitlement-key.txt ]; then
         apiKey=$(cat ${namePrefix}-entitlement-key.txt)
     else
-        if [ -f secrets/${namePrefix}-entitlement-key.txt ]; then
-            apiKey=$(cat secrets/${namePrefix}-entitlement-key.txt)
+        if [ -f ${secretsDir}/${namePrefix}-entitlement-key.txt ]; then
+            apiKey=$(cat ${secretsDir}/${namePrefix}-entitlement-key.txt)
         else
-            if [ -f ../secrets/${namePrefix}-entitlement-key.txt ]; then
-                apiKey=$(cat ../secrets/${namePrefix}-entitlement-key.txt)
+            if [ -f ../${secretsDir}/${namePrefix}-entitlement-key.txt ]; then
+                apiKey=$(cat ../${secretsDir}/${namePrefix}-entitlement-key.txt)
             fi
         fi
     fi
 fi
 
 if [ -z ${apiKey} ]; then
-    aborting "missing apiKey; add secrets/${namePrefix}-entitlement-key.txt or export it"
+    aborting "missing apiKey; add ${secretsDir}/${namePrefix}-entitlement-key.txt or export it"
 fi
 
 if [ -z ${openshiftUsername} ]; then
@@ -121,11 +125,11 @@ if [ -z ${openshiftPassword} ]; then
     if [ -f ${namePrefix}-openshift-password-${openshiftUsername}.txt ]; then
         openshiftPassword=$(cat ${namePrefix}-openshift-password-${openshiftUsername}.txt)
     else
-        if [ -f secrets/${namePrefix}-openshift-password-${openshiftUsername}.txt ]; then
-            openshiftPassword=$(cat secrets/${namePrefix}-openshift-password-${openshiftUsername}.txt)
+        if [ -f ${secretsDir}/${namePrefix}-openshift-password-${openshiftUsername}.txt ]; then
+            openshiftPassword=$(cat ${secretsDir}/${namePrefix}-openshift-password-${openshiftUsername}.txt)
         else
-            if [ -f ../secrets/${namePrefix}-openshift-password-${openshiftUsername}.txt ]; then
-                openshiftPassword=$(cat ../secrets/${namePrefix}-openshift-password-${openshiftUsername}.txt)
+            if [ -f ../${secretsDir}/${namePrefix}-openshift-password-${openshiftUsername}.txt ]; then
+                openshiftPassword=$(cat ../${secretsDir}/${namePrefix}-openshift-password-${openshiftUsername}.txt)
             fi
         fi
     fi
@@ -136,7 +140,7 @@ if [ -z ${adminUsername} ]; then
 fi
 
 if [ -z ${openshiftPassword} ]; then
-    aborting "missing openshiftPassword; create secrets/${namePrefix}-openshift-password-${adminUsername}.txt or export it"
+    aborting "missing openshiftPassword; create ${secretsDir}/${namePrefix}-openshift-password-${adminUsername}.txt or export it"
 fi
 
 if [ -z ${bastionHostname} ]; then
@@ -235,18 +239,18 @@ if [ -z ${pullSecret} ]; then
     if [ -f ${namePrefix}-pull-secret.txt ]; then
         pullSecret=$(realpath ${namePrefix}-pull-secret.txt)
     else
-        if [ -f secrets/${namePrefix}-pull-secret.txt ]; then
-            pullSecret=$(realpath secrets/${namePrefix}-pull-secret.txt)
+        if [ -f ${secretsDir}/${namePrefix}-pull-secret.txt ]; then
+            pullSecret=$(realpath ${secretsDir}/${namePrefix}-pull-secret.txt)
         else
-            if [ -f ../secrets/${namePrefix}-pull-secret.txt ]; then
-                pullSecret=$(realpath ../secrets/${namePrefix}-pull-secret.txt)
+            if [ -f ../${secretsDir}/${namePrefix}-pull-secret.txt ]; then
+                pullSecret=$(realpath ../${secretsDir}/${namePrefix}-pull-secret.txt)
             fi
         fi
     fi
 fi
 
 if [ -z ${openshiftPassword} ]; then
-    aborting "missing pullSecret (file); create secrets/${namePrefix}-pull-secret.txt or export the filename"
+    aborting "missing pullSecret (file); create ${secretsDir}/${namePrefix}-pull-secret.txt or export the filename"
 fi
 
 if [ -z ${serviceNetworkCIDR} ]; then
