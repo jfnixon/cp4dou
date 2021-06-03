@@ -27,7 +27,7 @@ fi
 while getopts "hg:n:p:z:" opt; do
     case $opt in
         g)
-            rgName=$OPTARG # optional service principle name
+            rgName=$OPTARG # optional resource group name
             ;;
         h)
             usage
@@ -36,10 +36,10 @@ while getopts "hg:n:p:z:" opt; do
             spName=$OPTARG # optional service principle name
             ;;
         p)
-            namePrefix=$OPTARG # optional service principle name
+            namePrefix=$OPTARG # optional name prefix
             ;;
         z)
-            dnsZone=$OPTARG # optional service principle name
+            dnsZone=$OPTARG # optional DNS zone name
             ;;
         *)
             usage
@@ -77,24 +77,6 @@ if [ -z ${aadClientId} ]; then
     aborting "missing aadClientId; run bin/servicePrinciple.sh or export it"
 fi
 
-if [ -z ${apiKey} ]; then
-    if [ -f ${namePrefix}-entitlement-key.txt ]; then
-        apiKey=$(cat ${namePrefix}-entitlement-key.txt)
-    else
-        if [ -f secrets/${namePrefix}-entitlement-key.txt ]; then
-            apiKey=$(cat secrets/${namePrefix}-entitlement-key.txt)
-        else
-            if [ -f ../secrets/${namePrefix}-entitlement-key.txt ]; then
-                apiKey=$(cat ../secrets/${namePrefix}-entitlement-key.txt)
-            fi
-        fi
-    fi
-fi
-
-if [ -z ${apiKey} ]; then
-    aborting "missing apiKey; add secrets/${namePrefix}-entitlement-key.txt or export it"
-fi
-
 if [ -z ${aadClientSecret} ]; then
     if [ -f ${spName}-secret.txt ]; then
         aadClientSecret=$(cat ${spName}-secret.txt)
@@ -111,6 +93,24 @@ fi
 
 if [ -z ${aadClientSecret} ]; then
     aborting "missing aadClientSecret; run bin/servicePrinciple.sh or export it"
+fi
+
+if [ -z ${apiKey} ]; then
+    if [ -f ${namePrefix}-entitlement-key.txt ]; then
+        apiKey=$(cat ${namePrefix}-entitlement-key.txt)
+    else
+        if [ -f secrets/${namePrefix}-entitlement-key.txt ]; then
+            apiKey=$(cat secrets/${namePrefix}-entitlement-key.txt)
+        else
+            if [ -f ../secrets/${namePrefix}-entitlement-key.txt ]; then
+                apiKey=$(cat ../secrets/${namePrefix}-entitlement-key.txt)
+            fi
+        fi
+    fi
+fi
+
+if [ -z ${apiKey} ]; then
+    aborting "missing apiKey; add secrets/${namePrefix}-entitlement-key.txt or export it"
 fi
 
 if [ -z ${openshiftUsername} ]; then
