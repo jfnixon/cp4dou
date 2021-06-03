@@ -83,6 +83,10 @@ echo "spHttpName = $spHttpName" >> ${spName}-info.txt
 echo "spRoles    = $spRoles" >> ${spName}-info.txt
 echo >> ${spName}-info.txt
 
+if [ -z ${secretsDir} ]; then
+    export secretsDir=secrets
+fi
+
 spData="$(az ad sp list --all | jq -r ".[] | select(.displayName==\"${spName}\")" 2> /dev/null)"
 if [ -z "${spData}" ]; then
     echo "Creating service principle ..."
@@ -97,11 +101,11 @@ else
     if [ -f ${spName}-secret.txt ]; then
         aadClientSecret=$(cat ${spName}-secret.txt)
     else
-        if [ -f secrets/${spName}-secret.txt ]; then
-            aadClientSecret=$(cat secrets/${spName}-secret.txt)
+        if [ -f ${secretsDir}/${spName}-secret.txt ]; then
+            aadClientSecret=$(cat ${secretsDir}/${spName}-secret.txt)
         else
-            if [ -f ../secrets/${spName}-secret.txt ]; then
-                aadClientSecret=$(cat ../secrets/${spName}-secret.txt)
+            if [ -f ../${secretsDir}/${spName}-secret.txt ]; then
+                aadClientSecret=$(cat ../${secretsDir}/${spName}-secret.txt)
             fi
         fi
     fi
