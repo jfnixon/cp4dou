@@ -13,12 +13,16 @@ function aborting() {
 
 function usage() {
     echo
-    echo "usage: $0 [-g <resource group name>] [-n <service principal name>] [-p <name prefix>] [-z <dns zone>]"
+    echo "usage: $0 <yes-really-do-it> [-g <resource group name>] [-n <service principal name>] [-p <name prefix>] [-z <dns zone>]"
     echo
     exit 2
 }
 
-if [ "$1" == "" ]; then
+if [ "$1" != "yes-really-do-it" ]; then
+    usage
+fi
+
+if [ "$2" == "" ]; then
     if [ "${dnsZone}" == "" ]; then
         usage
     fi
@@ -385,6 +389,21 @@ echo
 
 # https://raw.githubusercontent.com/mitaei/cp4d/master/azure/azuredeploy.json
 # verify quotas; az vm list-usage --location <region>
+
+if az group exists --name ${rgName} | grep -q true; then
+    echo "+ found resource group '${rgName}'"
+else
+    echo "+ creating resource group '${rgName}'"
+    echo
+    echo az group create --location ${location} --name ${rgName}
+    az group create --location ${location} --name ${rgName}
+    echo
+fi
+echo
+
+if ! az group exists --name ${rgName} | grep -q true; then
+    aborting "failed to validate resource group '${rgName}'"
+fi
 
 templateUri="https://raw.githubusercontent.com/mitaei/cp4d/master/azure/azuredeploy.json"
 
