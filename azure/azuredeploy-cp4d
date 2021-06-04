@@ -384,14 +384,14 @@ echo "apiKey                        = ${apiKey}"
 echo
 
 # https://raw.githubusercontent.com/mitaei/cp4d/master/azure/azuredeploy.json
-# https://${projectName}-cpd-${projectName}.apps.${clusterName}.${dnsZone}
-# https://console-openshift-console.apps.${clusterName}.${dnsZone}
 # verify quotas; az vm list-usage --location <region>
 
 templateUri="https://raw.githubusercontent.com/mitaei/cp4d/master/azure/azuredeploy.json"
 
 azArgs+="--resource-group ${rgName} "
 azArgs+="--template-uri ${templateUri} "
+azArgs+="--debug "
+azArgs+="--handle-extended-json-format "
 azArgs+="--parameters "
 azArgs+="adminUsername=${adminUsername} "
 azArgs+="aadClientId=${aadClientId} "
@@ -442,6 +442,22 @@ echo az deployment group create ${azArgs}
 echo
 
 az deployment group create ${azArgs}
+echo
+
+echo "If everything went well, then you should be able to browse to the OpenShift console:"
+echo
+echo "https://${projectName}-cpd-${projectName}.apps.${clusterName}.${dnsZone}"
+echo "login: kubeadmin"
+echo "(the password for kubeadmin is on the bastion host ... i.e.)"
+echo "grep kubeadmin /home/*admin*/.openshift/openshiftfourx/.openshift_install.log"
+echo
+
+echo "The CP4D install should be be browseable at:"
+echo
+echo "https://console-openshift-console.apps.${clusterName}.${dnsZone}"
+echo "login: admin"
+echo "password: password"
+echo
 
 deployFinish="$(date)"
 

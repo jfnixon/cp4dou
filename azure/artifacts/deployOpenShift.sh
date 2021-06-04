@@ -79,10 +79,12 @@ echo $(date) " - Install httpd-tools Complete"
 echo $(date) " - Download Binaries"
 runuser -l $SUDOUSER -c "mkdir -p /home/$SUDOUSER/.openshift"
 
-runuser -l $SUDOUSER -c "wget https://mirror.openshift.com/pub/openshift-v4/clients/ocp/4.6.12/openshift-install-linux-4.6.12.tar.gz"
-runuser -l $SUDOUSER -c "wget https://mirror.openshift.com/pub/openshift-v4/clients/ocp/4.6.12/openshift-client-linux-4.6.12.tar.gz"
-runuser -l $SUDOUSER -c "tar -xvf openshift-install-linux-4.6.12.tar.gz -C $INSTALLERHOME"
-runuser -l $SUDOUSER -c "sudo tar -xvf openshift-client-linux-4.6.12.tar.gz -C /usr/bin"
+openshift_version=4.6.12 # 20210228, jtingiris
+openshift_version=4.7.14 # 20210603, jtingiris
+runuser -l $SUDOUSER -c "wget https://mirror.openshift.com/pub/openshift-v4/clients/ocp/${openshift_version}/openshift-install-linux-${openshift_version}.tar.gz"
+runuser -l $SUDOUSER -c "wget https://mirror.openshift.com/pub/openshift-v4/clients/ocp/${openshift_version}/openshift-client-linux-${openshift_version}.tar.gz"
+runuser -l $SUDOUSER -c "tar -xvf openshift-install-linux-${openshift_version}.tar.gz -C $INSTALLERHOME"
+runuser -l $SUDOUSER -c "sudo tar -xvf openshift-client-linux-${openshift_version}.tar.gz -C /usr/bin"
 
 chmod +x /usr/bin/kubectl
 chmod +x /usr/bin/oc
