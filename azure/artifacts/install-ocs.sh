@@ -95,12 +95,12 @@ metadata:
   name: ocs-operator
   namespace: openshift-storage
 spec:
-  channel: stable-4.5
+  channel: stable-4.7
   installPlanApproval: Automatic
   name: ocs-operator
   source: redhat-operators
   sourceNamespace: openshift-marketplace
-  startingCSV: ocs-operator.v4.5.2
+  startingCSV: ocs-operator.v4.7.0
 EOF"
 
 runuser -l $SUDOUSER -c "cat > $OCSTEMPLATES/ocs-storagecluster.yaml <<EOF
