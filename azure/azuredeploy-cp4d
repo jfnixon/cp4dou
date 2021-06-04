@@ -391,7 +391,6 @@ templateUri="https://raw.githubusercontent.com/mitaei/cp4d/master/azure/azuredep
 azArgs+="--resource-group ${rgName} "
 azArgs+="--template-uri ${templateUri} "
 azArgs+="--debug "
-azArgs+="--handle-extended-json-format "
 azArgs+="--parameters "
 azArgs+="adminUsername=${adminUsername} "
 azArgs+="aadClientId=${aadClientId} "
@@ -441,6 +440,7 @@ azArgs+="cloudPakLicenseAgreement=accept"
 echo az deployment group create ${azArgs}
 echo
 
+#az deployment group what-if ${azArgs}
 az deployment group create ${azArgs}
 echo
 
