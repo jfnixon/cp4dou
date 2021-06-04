@@ -80,7 +80,8 @@ echo $(date) " - Download Binaries"
 runuser -l $SUDOUSER -c "mkdir -p /home/$SUDOUSER/.openshift"
 
 openshift_version=4.6.12 # 20210228, jtingiris
-openshift_version=4.7.14 # 20210603, jtingiris
+openshift_version=4.7.14 # 20210603, jtingiris, currently not in stable-4.7
+openshift_version=4.7.13 # 20210604, jtingiris
 runuser -l $SUDOUSER -c "wget https://mirror.openshift.com/pub/openshift-v4/clients/ocp/${openshift_version}/openshift-install-linux-${openshift_version}.tar.gz"
 runuser -l $SUDOUSER -c "wget https://mirror.openshift.com/pub/openshift-v4/clients/ocp/${openshift_version}/openshift-client-linux-${openshift_version}.tar.gz"
 runuser -l $SUDOUSER -c "tar -xvf openshift-install-linux-${openshift_version}.tar.gz -C $INSTALLERHOME"
