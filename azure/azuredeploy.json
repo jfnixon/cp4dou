@@ -486,7 +486,7 @@
         },
         "vTrue": true,
         "diagStorageAccountName_Orig": "[concat('diag', uniqueString(resourceGroup().id))]",
-        "diagStorageAccountName": "[concat(replace(parameters('namePrefix'),'-',''), 'storage1')]",
+        "diagStorageAccountName": "[concat(replace(parameters('namePrefix'),'-',''), 'stor', uniqueString(resourceGroup().id))]",
         "bastionPublicIpDnsLabel_Orig": "[concat('bastiondns', uniqueString(resourceGroup().id))]",
         "bastionPublicIpDnsLabel": "[concat(parameters('bastionHostname'), '-ip')]",
         "sshKeyPath": "[concat('/home/', parameters('adminUsername'), '/.ssh/authorized_keys')]",
