@@ -22,6 +22,8 @@ if [ "$1" != "yes-really-do-it" ]; then
     usage
 fi
 
+echo "building client $client $environment environment."
+
 if [ "$2" == "" ]; then
     if [ "${dnsZone}" == "" ]; then
         usage
@@ -82,7 +84,7 @@ if [ -z ${aadClientId} ]; then
 fi
 
 if [ -z ${secretsDir} ]; then
-    secretsDir=secrets
+    secretsDir=secrets/${client}/${environment}
 fi
 
 if [ -z ${aadClientSecret} ]; then
@@ -266,13 +268,13 @@ if [ -z ${singleZoneOrMultiZone} ]; then
 fi
 
 if [ -z ${sshPublicKey} ]; then
-    if [ -r ~/.ssh/id_rsa.pub ]; then
-        sshPublicKey=$(realpath ~/.ssh/id_rsa.pub)
+    if [ -f ${secretsDir}/id_rsa.pub ]; then
+        sshPublicKey=$(realpath ${secretsDir}/id_rsa.pub)
     fi
 fi
 
 if [ -z ${sshPublicKey} ]; then
-    aborting "missing sshPublicKey (file); create ~/.ssh/id_rsa.pub or export the filename"
+    aborting "missing sshPublicKey (file); create secret id_rsa.pub or export the filename"
 fi
 
 if [ ! -r ${sshPublicKey} ]; then
@@ -405,7 +407,7 @@ if ! az group exists --name ${rgName} | grep -q true; then
     aborting "failed to validate resource group '${rgName}'"
 fi
 
-templateUri="https://raw.githubusercontent.com/mitaei/cp4d/master/azure/azuredeploy.json"
+templateUri="https://raw.githubusercontent.com/jfnixon/cp4d/master/azure/azuredeploy.json"
 
 azArgs+="--resource-group ${rgName} "
 azArgs+="--template-uri ${templateUri} "
@@ -454,7 +456,7 @@ azArgs+="workerSecurityGroupName=${workerSecurityGroupName} "
 azArgs+="workerVmSize=${workerVmSize} "
 azArgs+="virtualNetworkCIDR=(\"${virtualNetworkCIDR}\",) "
 azArgs+="virtualNetworkName=${virtualNetworkName} "
-azArgs+="cloudPakLicenseAgreement=accept"
+azArgs+="cloudPakLicenseAgreement=reject"
 
 echo az deployment group create ${azArgs}
 echo
