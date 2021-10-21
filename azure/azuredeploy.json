@@ -376,98 +376,10 @@
                 "description": "Openshift Namespace to deploy project."
             }
         },
-        "installWatsonStudioLocal": {
-            "type": "string",
-            "defaultValue": "no",
-            "allowedValues": [
-                "yes",
-                "no"
-            ],
-            "metadata": {
-                "description": "Install Watson Studio Library."
-            }
-        },
-        "installWatsonMachineLearning": {
-            "type": "string",
-            "defaultValue": "no",
-            "allowedValues": [
-                "yes",
-                "no"
-            ],
-            "metadata": {
-                "description": "Install Watson Machine Learning."
-            }
-        },
-        "installWatsonKnowledgeCatalog": {
-            "type": "string",
-            "defaultValue": "no",
-            "allowedValues": [
-                "yes",
-                "no"
-            ],
-            "metadata": {
-                "description": "Install Watson Knowledge Catalog."
-            }
-        },
-        "installDataVirtualization": {
-            "type": "string",
-            "defaultValue": "no",
-            "allowedValues": [
-                "yes",
-                "no"
-            ],
-            "metadata": {
-                "description": "Install Data Virtualization."
-            }
-        },
-        "installCognosDashboard": {
-            "type": "string",
-            "defaultValue": "no",
-            "allowedValues": [
-                "yes",
-                "no"
-            ],
-            "metadata": {
-                "description": "Install Cognos Dashboard."
-            }
-        },
-        "installWatsonOpenscaleAndWatsonMachineLearning": {
-            "type": "string",
-            "defaultValue": "no",
-            "allowedValues": [
-                "yes",
-                "no"
-            ],
-            "metadata": {
-                "description": "Install Watson OpenScale and Watson Machine Learning."
-            }
-        },
-        "installApacheSpark": {
-            "type": "string",
-            "defaultValue": "no",
-            "allowedValues": [
-                "yes",
-                "no"
-            ],
-            "metadata": {
-                "description": "Install Cognos Dashboard."
-            }
-        },
         "apiKey": {
             "type": "securestring",
             "metadata": {
                 "description": "IBM Container Registry API Key. See README on how to obtain this."
-            }
-        },
-        "cloudPakLicenseAgreement": {
-            "type": "string",
-            "defaultValue": "reject",
-            "allowedValues": [
-                "accept",
-                "reject"
-            ],
-            "metadata": {
-                "description": "Accept License Agreement: https://ibm.biz/Bdq6KP"
             }
         }
     },
@@ -493,13 +405,8 @@
         "clusterNodeDeploymentTemplateUrl": "[uri(parameters('_artifactsLocation'), concat('nested/clusternode.json', parameters('_artifactsLocationSasToken')))]",
         "openshiftDeploymentTemplateUrl": "[uri(parameters('_artifactsLocation'), concat('nested/openshiftdeploy.json', parameters('_artifactsLocationSasToken')))]",
         "openshiftDeploymentScriptUrl": "[uri(parameters('_artifactsLocation'), concat('artifacts/deployOpenShift.sh', parameters('_artifactsLocationSasToken')))]",
-        "cloudPakDeploymentTemplateUrl": "[uri(parameters('_artifactsLocation'), concat('nested/cloudpakdeploy.json', parameters('_artifactsLocationSasToken')))]",
-        "cloudPakDeploymentScriptUrl": "[uri(parameters('_artifactsLocation'), concat('artifacts/deployCloudPak.sh', parameters('_artifactsLocationSasToken')))]",
-        "cloudPakConfigScriptFileName": "openshiftCloudPakConfig.sh",
-        "cloudPakConfigScriptUrl": "[uri(parameters('_artifactsLocation'), concat('artifacts/openshiftCloudPakConfig.sh', parameters('_artifactsLocationSasToken')))]",
         "nfsInstallScriptUrl": "[uri(parameters('_artifactsLocation'), concat('artifacts/setup-nfs.sh', parameters('_artifactsLocationSasToken')))]",
         "openshiftDeploymentScriptFileName": "deployOpenShift.sh",
-        "cloudPakDeploymentScriptFileName": "deployCloudPak.sh",
         "nfsInstallScriptFileName": "setup-nfs.sh",
         "installOCSDeploymentScriptUrl": "[uri(parameters('_artifactsLocation'), concat('artifacts/install-ocs.sh', parameters('_artifactsLocationSasToken')))]",
         "installOCSDeploymentTemplateUrl": "[uri(parameters('_artifactsLocation'), concat('nested/ocs.json', parameters('_artifactsLocationSasToken')))]",
@@ -1133,7 +1040,8 @@
                 "policyId": "[resourceId('Microsoft.RecoveryServices/vaults/backupPolicies', variables('vaultName'), variables('backupPolicyName'))]",
                 "sourceResourceId": "[resourceId('Microsoft.Compute/virtualMachines', parameters('nfsHostname'))]"
             }
-        },
+        }
+    ],
     "outputs": {
         "Openshift Console URL": {
             "type": "string",
