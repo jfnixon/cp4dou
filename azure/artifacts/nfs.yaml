@@ -1,0 +1,215 @@
+{
+    "kind": "List",
+    "apiVersion": "v1",
+    "metadata": {},
+    "items": [
+        {
+            "apiVersion": "v1",
+            "kind": "ServiceAccount",
+            "metadata": {
+                "name": "nfs-client-provisioner"
+            }
+        },
+        {
+            "apiVersion": "rbac.authorization.k8s.io/v1",
+            "kind": "ClusterRole",
+            "metadata": {
+                "name": "nfs-client-provisioner-runner"
+            },
+            "rules": [
+                {
+                    "apiGroups": [
+                        ""
+                    ],
+                    "resources": [
+                        "persistentvolumes"
+                    ],
+                    "verbs": [
+                        "get",
+                        "list",
+                        "watch",
+                        "create",
+                        "delete"
+                    ]
+                },
+                {
+                    "apiGroups": [
+                        ""
+                    ],
+                    "resources": [
+                        "persistentvolumeclaims"
+                    ],
+                    "verbs": [
+                        "get",
+                        "list",
+                        "watch",
+                        "update"
+                    ]
+                },
+                {
+                    "apiGroups": [
+                        "storage.k8s.io"
+                    ],
+                    "resources": [
+                        "storageclasses"
+                    ],
+                    "verbs": [
+                        "get",
+                        "list",
+                        "watch"
+                    ]
+                },
+                {
+                    "apiGroups": [
+                        ""
+                    ],
+                    "resources": [
+                        "events"
+                    ],
+                    "verbs": [
+                        "create",
+                        "update",
+                        "patch"
+                    ]
+                }
+            ]
+        },
+        {
+            "apiVersion": "rbac.authorization.k8s.io/v1",
+            "kind": "ClusterRoleBinding",
+            "metadata": {
+                "name": "run-nfs-client-provisioner"
+            },
+            "roleRef": {
+                "apiGroup": "rbac.authorization.k8s.io",
+                "kind": "ClusterRole",
+                "name": "nfs-client-provisioner-runner"
+            },
+            "subjects": [
+                {
+                    "kind": "ServiceAccount",
+                    "name": "nfs-client-provisioner",
+                    "namespace": "kube-system"
+                }
+            ]
+        },
+        {
+            "apiVersion": "rbac.authorization.k8s.io/v1",
+            "kind": "Role",
+            "metadata": {
+                "name": "leader-locking-nfs-client-provisioner"
+            },
+            "rules": [
+                {
+                    "apiGroups": [
+                        ""
+                    ],
+                    "resources": [
+                        "endpoints"
+                    ],
+                    "verbs": [
+                        "get",
+                        "list",
+                        "watch",
+                        "create",
+                        "update",
+                        "patch"
+                    ]
+                }
+            ]
+        },
+        {
+            "apiVersion": "rbac.authorization.k8s.io/v1",
+            "kind": "RoleBinding",
+            "metadata": {
+                "name": "leader-locking-nfs-client-provisioner"
+            },
+            "roleRef": {
+                "apiGroup": "rbac.authorization.k8s.io",
+                "kind": "Role",
+                "name": "leader-locking-nfs-client-provisioner"
+            },
+            "subjects": [
+                {
+                    "kind": "ServiceAccount",
+                    "name": "nfs-client-provisioner",
+                    "namespace": "kube-system"
+                }
+            ]
+        },
+        {
+            "apiVersion": "storage.k8s.io/v1",
+            "kind": "StorageClass",
+            "metadata": {
+                "name": "nfs"
+            },
+            "parameters": {
+                "archiveOnDelete": "false"
+            },
+            "provisioner": "example.com/nfs"
+        },
+        {
+            "apiVersion": "apps/v1",
+            "kind": "Deployment",
+            "metadata": {
+                "name": "nfs-client-provisioner"
+            },
+            "spec": {
+                "replicas": 1,
+                "selector": {
+                    "matchLabels": {
+                        "app": "nfs-client-provisioner"
+                    }
+                },
+                "strategy": {
+                    "type": "Recreate"
+                },
+                "template": {
+                    "metadata": {
+                        "labels": {
+                            "app": "nfs-client-provisioner"
+                        }
+                    },
+                    "spec": {
+                        "containers": [
+                            {
+                                "env": [
+                                    {
+                                        "name": "PROVISIONER_NAME",
+                                        "value": "example.com/nfs"
+                                    },
+                                    {
+                                        "name": "NFS_SERVER",
+                                        "value": "10.72.4.4"
+                                    },
+                                    {
+                                        "name": "NFS_PATH",
+                                        "value": "/exports/home"
+                                    }
+                                ],
+                                "image": "quay.io/external_storage/nfs-client-provisioner:latest",
+                                "name": "nfs-client-provisioner",
+                                "volumeMounts": [
+                                    {
+                                        "mountPath": "/persistentvolumes",
+                                        "name": "nfs-client-root"
+                                    }
+                                ]
+                            }
+                        ],
+                        "serviceAccountName": "nfs-client-provisioner",
+                        "volumes": [
+                            {
+                                "name": "nfs-client-root",
+                                "nfs": {
+                                    "path": "/exports/home",
+                                    "server": "10.72.4.4"
+                                }
+                            }
+                        ]
+                    }
+                }
+            }
+        }
+    ]
+}
