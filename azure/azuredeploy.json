@@ -376,10 +376,98 @@
                 "description": "Openshift Namespace to deploy project."
             }
         },
+        "installWatsonStudioLocal": {
+            "type": "string",
+            "defaultValue": "no",
+            "allowedValues": [
+                "yes",
+                "no"
+            ],
+            "metadata": {
+                "description": "Install Watson Studio Library."
+            }
+        },
+        "installWatsonMachineLearning": {
+            "type": "string",
+            "defaultValue": "no",
+            "allowedValues": [
+                "yes",
+                "no"
+            ],
+            "metadata": {
+                "description": "Install Watson Machine Learning."
+            }
+        },
+        "installWatsonKnowledgeCatalog": {
+            "type": "string",
+            "defaultValue": "no",
+            "allowedValues": [
+                "yes",
+                "no"
+            ],
+            "metadata": {
+                "description": "Install Watson Knowledge Catalog."
+            }
+        },
+        "installDataVirtualization": {
+            "type": "string",
+            "defaultValue": "no",
+            "allowedValues": [
+                "yes",
+                "no"
+            ],
+            "metadata": {
+                "description": "Install Data Virtualization."
+            }
+        },
+        "installCognosDashboard": {
+            "type": "string",
+            "defaultValue": "no",
+            "allowedValues": [
+                "yes",
+                "no"
+            ],
+            "metadata": {
+                "description": "Install Cognos Dashboard."
+            }
+        },
+        "installWatsonOpenscaleAndWatsonMachineLearning": {
+            "type": "string",
+            "defaultValue": "no",
+            "allowedValues": [
+                "yes",
+                "no"
+            ],
+            "metadata": {
+                "description": "Install Watson OpenScale and Watson Machine Learning."
+            }
+        },
+        "installApacheSpark": {
+            "type": "string",
+            "defaultValue": "no",
+            "allowedValues": [
+                "yes",
+                "no"
+            ],
+            "metadata": {
+                "description": "Install Cognos Dashboard."
+            }
+        },
         "apiKey": {
             "type": "securestring",
             "metadata": {
                 "description": "IBM Container Registry API Key. See README on how to obtain this."
+            }
+        },
+        "cloudPakLicenseAgreement": {
+            "type": "string",
+            "defaultValue": "reject",
+            "allowedValues": [
+                "accept",
+                "reject"
+            ],
+            "metadata": {
+                "description": "Accept License Agreement: https://ibm.biz/Bdq6KP"
             }
         }
     },
@@ -387,7 +475,7 @@
         "networkResourceGroup": "[parameters('existingVnetResourceGroupName')]",
         "redHatTags": {
             "app": "OpenshiftContainerPlatform",
-            "version": "4.7.x",
+            "version": "4.8.x",
             "platform": "AzurePublic"
         },
         "imageReference": {
@@ -405,8 +493,13 @@
         "clusterNodeDeploymentTemplateUrl": "[uri(parameters('_artifactsLocation'), concat('nested/clusternode.json', parameters('_artifactsLocationSasToken')))]",
         "openshiftDeploymentTemplateUrl": "[uri(parameters('_artifactsLocation'), concat('nested/openshiftdeploy.json', parameters('_artifactsLocationSasToken')))]",
         "openshiftDeploymentScriptUrl": "[uri(parameters('_artifactsLocation'), concat('artifacts/deployOpenShift.sh', parameters('_artifactsLocationSasToken')))]",
+        "cloudPakDeploymentTemplateUrl": "[uri(parameters('_artifactsLocation'), concat('nested/cloudpakdeploy.json', parameters('_artifactsLocationSasToken')))]",
+        "cloudPakDeploymentScriptUrl": "[uri(parameters('_artifactsLocation'), concat('artifacts/deployCloudPak.sh', parameters('_artifactsLocationSasToken')))]",
+        "cloudPakConfigScriptFileName": "openshiftCloudPakConfig.sh",
+        "cloudPakConfigScriptUrl": "[uri(parameters('_artifactsLocation'), concat('artifacts/openshiftCloudPakConfig.sh', parameters('_artifactsLocationSasToken')))]",
         "nfsInstallScriptUrl": "[uri(parameters('_artifactsLocation'), concat('artifacts/setup-nfs.sh', parameters('_artifactsLocationSasToken')))]",
         "openshiftDeploymentScriptFileName": "deployOpenShift.sh",
+        "cloudPakDeploymentScriptFileName": "deployCloudPak.sh",
         "nfsInstallScriptFileName": "setup-nfs.sh",
         "installOCSDeploymentScriptUrl": "[uri(parameters('_artifactsLocation'), concat('artifacts/install-ocs.sh', parameters('_artifactsLocationSasToken')))]",
         "installOCSDeploymentTemplateUrl": "[uri(parameters('_artifactsLocation'), concat('nested/ocs.json', parameters('_artifactsLocationSasToken')))]",
@@ -1040,12 +1133,594 @@
                 "policyId": "[resourceId('Microsoft.RecoveryServices/vaults/backupPolicies', variables('vaultName'), variables('backupPolicyName'))]",
                 "sourceResourceId": "[resourceId('Microsoft.Compute/virtualMachines', parameters('nfsHostname'))]"
             }
+        },
+        {
+            "type": "Microsoft.Compute/virtualMachines/extensions",
+            "apiVersion": "2019-07-01",
+            "name": "[concat(parameters('bastionHostname'), '/deployOpenshift')]",
+            "location": "[parameters('location')]",
+            "dependsOn": [
+                "BastionVmDeployment",
+                "OpenShiftDeployment"
+            ],
+            "tags": {
+                "displayName": "CloudPakConfig",
+                "app": "[variables('redHatTags').app]",
+                "version": "[variables('redHatTags').version]",
+                "platform": "[variables('redHatTags').platform]"
+            },
+            "properties": {
+                "publisher": "Microsoft.Azure.Extensions",
+                "type": "CustomScript",
+                "typeHandlerVersion": "2.0",
+                "autoUpgradeMinorVersion": true,
+                "settings": {
+                    "fileUris": [
+                        "[variables('cloudPakConfigScriptUrl')]"
+                    ]
+                },
+                "protectedSettings": {
+                    "commandToExecute": "[concat('bash ', variables('cloudPakConfigScriptFileName'), ' \"', uri(parameters('_artifactsLocation'), '.'), '\"', ' \"', parameters('_artifactsLocationSasToken'), '\"', ' \"', parameters('adminUsername'), '\"', ' \"', parameters('workerInstanceCount'), '\"', ' \"', parameters('projectName'), '\"', ' \"', parameters('apiKey'), '\"', ' \"', parameters('enableFips'), '\"')]"
+                }
+            }
+        },
+        {
+            "condition": "[equals(parameters('cloudPakLicenseAgreement'), 'accept')]",
+            "type": "Microsoft.Resources/deployments",
+            "apiVersion": "2019-05-01",
+            "name": "CloudPakLiteDeployment",
+            "dependsOn": [
+                "nfsVmDeployment",
+                "OpenShiftDeployment",
+                "[variables('deployOpenshiftExt')]",
+                "OCSDeployment"
+            ],
+            "properties": {
+                "mode": "Incremental",
+                "templateLink": {
+                    "uri": "[variables('cloudPakDeploymentTemplateUrl')]",
+                    "contentVersion": "1.0.0.0"
+                },
+                "parameters": {
+                    "assembly": {
+                        "value": "lite"
+                    },
+                    "cloudPakDeploymentScriptUrl": {
+                        "value": "[variables('cloudPakDeploymentScriptUrl')]"
+                    },
+                    "cloudPakDeploymentScriptFileName": {
+                        "value": "[variables('cloudPakDeploymentScriptFileName')]"
+                    },
+                    "redHatTags": {
+                        "value": "[variables('redHatTags')]"
+                    },
+                    "adminUsername":{
+                        "value": "[parameters('adminUsername')]"
+                    },
+                    "ocuser": {
+                        "value": "[parameters('openshiftUsername')]"
+                    },
+                    "ocpassword": {
+                        "value": "[parameters('openshiftPassword')]"
+                    },
+                    "storageOption": {
+                        "value": "[parameters('storageOption')]"
+                    },
+                    "bastionHostname": {
+                        "value": "[parameters('bastionHostname')]"
+                    },
+                    "projectName": {
+                        "value": "[parameters('projectName')]"
+                    },
+                    "location": {
+                        "value": "[parameters('location')]"
+                    },
+                    "clusterName": {
+                        "value": "[parameters('clusterName')]"
+                    },
+                    "domainName": {
+                        "value": "[parameters('dnsZone')]"
+                    }
+                }
+            }
+        },
+        {
+            "condition": "[and(equals(parameters('cloudPakLicenseAgreement'), 'accept'), equals(parameters('installDataVirtualization'), 'yes'))]",
+            "type": "Microsoft.Resources/deployments",
+            "apiVersion": "2019-05-01",
+            "name": "CloudPakDVDeployment",
+            "dependsOn": [
+                "nfsVmDeployment",
+                "OpenShiftDeployment",
+                "[variables('deployOpenshiftExt')]",
+                "CloudPakLiteDeployment",
+                "OCSDeployment"
+            ],
+            "properties": {
+                "mode": "Incremental",
+                "templateLink": {
+                    "uri": "[variables('cloudPakDeploymentTemplateUrl')]",
+                    "contentVersion": "1.0.0.0"
+                },
+                "parameters": {
+                    "assembly": {
+                        "value": "dv"
+                    },
+                    "cloudPakDeploymentScriptUrl": {
+                        "value": "[variables('cloudPakDeploymentScriptUrl')]"
+                    },
+                    "cloudPakDeploymentScriptFileName": {
+                        "value": "[variables('cloudPakDeploymentScriptFileName')]"
+                    },
+                    "redHatTags": {
+                        "value": "[variables('redHatTags')]"
+                    },
+                    "adminUsername":{
+                        "value": "[parameters('adminUsername')]"
+                    },
+                    "ocuser": {
+                        "value": "[parameters('openshiftUsername')]"
+                    },
+                    "ocpassword": {
+                        "value": "[parameters('openshiftPassword')]"
+                    },
+                    "storageOption": {
+                        "value": "[parameters('storageOption')]"
+                    },
+                    "bastionHostname": {
+                        "value": "[parameters('bastionHostname')]"
+                    },
+                    "projectName": {
+                        "value": "[parameters('projectName')]"
+                    },
+                    "location": {
+                        "value": "[parameters('location')]"
+                    },
+                    "clusterName": {
+                        "value": "[parameters('clusterName')]"
+                    },
+                    "domainName": {
+                        "value": "[parameters('dnsZone')]"
+                    }
+                }
+            }
+        },
+        {
+            "condition": "[and(equals(parameters('cloudPakLicenseAgreement'), 'accept'), equals(parameters('installCognosDashboard'), 'yes'))]",
+            "type": "Microsoft.Resources/deployments",
+            "apiVersion": "2019-05-01",
+            "name": "CloudPakCDEDeployment",
+            "dependsOn": [
+                "nfsVmDeployment",
+                "OpenShiftDeployment",
+                "[variables('deployOpenshiftExt')]",
+                "CloudPakDVDeployment",
+                "OCSDeployment"
+            ],
+            "properties": {
+                "mode": "Incremental",
+                "templateLink": {
+                    "uri": "[variables('cloudPakDeploymentTemplateUrl')]",
+                    "contentVersion": "1.0.0.0"
+                },
+                "parameters": {
+                    "assembly": {
+                        "value": "cde"
+                    },
+                    "cloudPakDeploymentScriptUrl": {
+                        "value": "[variables('cloudPakDeploymentScriptUrl')]"
+                    },
+                    "cloudPakDeploymentScriptFileName": {
+                        "value": "[variables('cloudPakDeploymentScriptFileName')]"
+                    },
+                    "redHatTags": {
+                        "value": "[variables('redHatTags')]"
+                    },
+                    "adminUsername":{
+                        "value": "[parameters('adminUsername')]"
+                    },
+                    "ocuser": {
+                        "value": "[parameters('openshiftUsername')]"
+                    },
+                    "ocpassword": {
+                        "value": "[parameters('openshiftPassword')]"
+                    },
+                    "storageOption": {
+                        "value": "[parameters('storageOption')]"
+                    },
+                    "bastionHostname": {
+                        "value": "[parameters('bastionHostname')]"
+                    },
+                    "projectName": {
+                        "value": "[parameters('projectName')]"
+                    },
+                    "location": {
+                        "value": "[parameters('location')]"
+                    },
+                    "clusterName": {
+                        "value": "[parameters('clusterName')]"
+                    },
+                    "domainName": {
+                        "value": "[parameters('dnsZone')]"
+                    }
+                }
+            }
+        },
+        {
+            "condition": "[and(equals(parameters('cloudPakLicenseAgreement'), 'accept'), equals(parameters('installWatsonStudioLocal'), 'yes'))]",
+            "type": "Microsoft.Resources/deployments",
+            "apiVersion": "2019-05-01",
+            "name": "CloudPakWSLDeployment",
+            "dependsOn": [
+                "nfsVmDeployment",
+                "OpenShiftDeployment",
+                "[variables('deployOpenshiftExt')]",
+                "CloudPakCDEDeployment",
+                "OCSDeployment"
+            ],
+            "properties": {
+                "mode": "Incremental",
+                "templateLink": {
+                    "uri": "[variables('cloudPakDeploymentTemplateUrl')]",
+                    "contentVersion": "1.0.0.0"
+                },
+                "parameters": {
+                    "assembly": {
+                        "value": "wsl"
+                    },
+                    "cloudPakDeploymentScriptUrl": {
+                        "value": "[variables('cloudPakDeploymentScriptUrl')]"
+                    },
+                    "cloudPakDeploymentScriptFileName": {
+                        "value": "[variables('cloudPakDeploymentScriptFileName')]"
+                    },
+                    "redHatTags": {
+                        "value": "[variables('redHatTags')]"
+                    },
+                    "adminUsername":{
+                        "value": "[parameters('adminUsername')]"
+                    },
+                    "ocuser": {
+                        "value": "[parameters('openshiftUsername')]"
+                    },
+                    "ocpassword": {
+                        "value": "[parameters('openshiftPassword')]"
+                    },
+                    "storageOption": {
+                        "value": "[parameters('storageOption')]"
+                    },
+                    "bastionHostname": {
+                        "value": "[parameters('bastionHostname')]"
+                    },
+                    "projectName": {
+                        "value": "[parameters('projectName')]"
+                    },
+                    "location": {
+                        "value": "[parameters('location')]"
+                    },
+                    "clusterName": {
+                        "value": "[parameters('clusterName')]"
+                    },
+                    "domainName": {
+                        "value": "[parameters('dnsZone')]"
+                    }
+                }
+            }
+        },
+        {
+            "condition": "[and(equals(parameters('cloudPakLicenseAgreement'), 'accept'), equals(parameters('installWatsonMachineLearning'), 'yes'))]",
+            "type": "Microsoft.Resources/deployments",
+            "apiVersion": "2019-05-01",
+            "name": "CloudPakWMLDeployment",
+            "dependsOn": [
+                "nfsVmDeployment",
+                "OpenShiftDeployment",
+                "[variables('deployOpenshiftExt')]",
+                "CloudPakWSLDeployment",
+                "OCSDeployment"
+            ],
+            "properties": {
+                "mode": "Incremental",
+                "templateLink": {
+                    "uri": "[variables('cloudPakDeploymentTemplateUrl')]",
+                    "contentVersion": "1.0.0.0"
+                },
+                "parameters": {
+                    "assembly": {
+                        "value": "wml"
+                    },
+                    "cloudPakDeploymentScriptUrl": {
+                        "value": "[variables('cloudPakDeploymentScriptUrl')]"
+                    },
+                    "cloudPakDeploymentScriptFileName": {
+                        "value": "[variables('cloudPakDeploymentScriptFileName')]"
+                    },
+                    "redHatTags": {
+                        "value": "[variables('redHatTags')]"
+                    },
+                    "adminUsername":{
+                        "value": "[parameters('adminUsername')]"
+                    },
+                    "ocuser": {
+                        "value": "[parameters('openshiftUsername')]"
+                    },
+                    "ocpassword": {
+                        "value": "[parameters('openshiftPassword')]"
+                    },
+                    "storageOption": {
+                        "value": "[parameters('storageOption')]"
+                    },
+                    "bastionHostname": {
+                        "value": "[parameters('bastionHostname')]"
+                    },
+                    "projectName": {
+                        "value": "[parameters('projectName')]"
+                    },
+                    "location": {
+                        "value": "[parameters('location')]"
+                    },
+                    "clusterName": {
+                        "value": "[parameters('clusterName')]"
+                    },
+                    "domainName": {
+                        "value": "[parameters('dnsZone')]"
+                    }
+                }
+            }
+        },
+        {
+            "condition": "[and(equals(parameters('cloudPakLicenseAgreement'), 'accept'), equals(parameters('installWatsonKnowledgeCatalog'), 'yes'))]",
+            "type": "Microsoft.Resources/deployments",
+            "apiVersion": "2019-05-01",
+            "name": "CloudPakWKCCoreDeployment",
+            "dependsOn": [
+                "nfsVmDeployment",
+                "OpenShiftDeployment",
+                "[variables('deployOpenshiftExt')]",
+                "CloudPakWMLDeployment",
+                "OCSDeployment"
+            ],
+            "properties": {
+                "mode": "Incremental",
+                "templateLink": {
+                    "uri": "[variables('cloudPakDeploymentTemplateUrl')]",
+                    "contentVersion": "1.0.0.0"
+                },
+                "parameters": {
+                    "assembly": {
+                        "value": "wkc-core"
+                    },
+                    "cloudPakDeploymentScriptUrl": {
+                        "value": "[variables('cloudPakDeploymentScriptUrl')]"
+                    },
+                    "cloudPakDeploymentScriptFileName": {
+                        "value": "[variables('cloudPakDeploymentScriptFileName')]"
+                    },
+                    "redHatTags": {
+                        "value": "[variables('redHatTags')]"
+                    },
+                    "adminUsername":{
+                        "value": "[parameters('adminUsername')]"
+                    },
+                    "ocuser": {
+                        "value": "[parameters('openshiftUsername')]"
+                    },
+                    "ocpassword": {
+                        "value": "[parameters('openshiftPassword')]"
+                    },
+                    "storageOption": {
+                        "value": "[parameters('storageOption')]"
+                    },
+                    "bastionHostname": {
+                        "value": "[parameters('bastionHostname')]"
+                    },
+                    "projectName": {
+                        "value": "[parameters('projectName')]"
+                    },
+                    "location": {
+                        "value": "[parameters('location')]"
+                    },
+                    "clusterName": {
+                        "value": "[parameters('clusterName')]"
+                    },
+                    "domainName": {
+                        "value": "[parameters('dnsZone')]"
+                    }
+                }
+            }
+        },
+        {
+            "condition": "[and(equals(parameters('cloudPakLicenseAgreement'), 'accept'), equals(parameters('installWatsonKnowledgeCatalog'), 'yes'))]",
+            "type": "Microsoft.Resources/deployments",
+            "apiVersion": "2019-05-01",
+            "name": "CloudPakWKCDeployment",
+            "dependsOn": [
+                "nfsVmDeployment",
+                "OpenShiftDeployment",
+                "[variables('deployOpenshiftExt')]",
+                "CloudPakWKCCoreDeployment",
+                "OCSDeployment"
+            ],
+            "properties": {
+                "mode": "Incremental",
+                "templateLink": {
+                    "uri": "[variables('cloudPakDeploymentTemplateUrl')]",
+                    "contentVersion": "1.0.0.0"
+                },
+                "parameters": {
+                    "assembly": {
+                        "value": "wkc"
+                    },
+                    "cloudPakDeploymentScriptUrl": {
+                        "value": "[variables('cloudPakDeploymentScriptUrl')]"
+                    },
+                    "cloudPakDeploymentScriptFileName": {
+                        "value": "[variables('cloudPakDeploymentScriptFileName')]"
+                    },
+                    "redHatTags": {
+                        "value": "[variables('redHatTags')]"
+                    },
+                    "adminUsername":{
+                        "value": "[parameters('adminUsername')]"
+                    },
+                    "ocuser": {
+                        "value": "[parameters('openshiftUsername')]"
+                    },
+                    "ocpassword": {
+                        "value": "[parameters('openshiftPassword')]"
+                    },
+                    "storageOption": {
+                        "value": "[parameters('storageOption')]"
+                    },
+                    "bastionHostname": {
+                        "value": "[parameters('bastionHostname')]"
+                    },
+                    "projectName": {
+                        "value": "[parameters('projectName')]"
+                    },
+                    "location": {
+                        "value": "[parameters('location')]"
+                    },
+                    "clusterName": {
+                        "value": "[parameters('clusterName')]"
+                    },
+                    "domainName": {
+                        "value": "[parameters('dnsZone')]"
+                    }
+                }
+            }
+        },
+        {
+            "condition": "[and(equals(parameters('cloudPakLicenseAgreement'), 'accept'), equals(parameters('installWatsonOpenscaleAndWatsonMachineLearning'), 'yes'))]",
+            "type": "Microsoft.Resources/deployments",
+            "apiVersion": "2019-05-01",
+            "name": "CloudPakWOSDeployment",
+            "dependsOn": [
+                "nfsVmDeployment",
+                "OpenShiftDeployment",
+                "[variables('deployOpenshiftExt')]",
+                "CloudPakWKCDeployment",
+                "OCSDeployment"
+            ],
+            "properties": {
+                "mode": "Incremental",
+                "templateLink": {
+                    "uri": "[variables('cloudPakDeploymentTemplateUrl')]",
+                    "contentVersion": "1.0.0.0"
+                },
+                "parameters": {
+                    "assembly": {
+                        "value": "aiopenscale"
+                    },
+                    "cloudPakDeploymentScriptUrl": {
+                        "value": "[variables('cloudPakDeploymentScriptUrl')]"
+                    },
+                    "cloudPakDeploymentScriptFileName": {
+                        "value": "[variables('cloudPakDeploymentScriptFileName')]"
+                    },
+                    "redHatTags": {
+                        "value": "[variables('redHatTags')]"
+                    },
+                    "adminUsername":{
+                        "value": "[parameters('adminUsername')]"
+                    },
+                    "ocuser": {
+                        "value": "[parameters('openshiftUsername')]"
+                    },
+                    "ocpassword": {
+                        "value": "[parameters('openshiftPassword')]"
+                    },
+                    "storageOption": {
+                        "value": "[parameters('storageOption')]"
+                    },
+                    "bastionHostname": {
+                        "value": "[parameters('bastionHostname')]"
+                    },
+                    "projectName": {
+                        "value": "[parameters('projectName')]"
+                    },
+                    "location": {
+                        "value": "[parameters('location')]"
+                    },
+                    "clusterName": {
+                        "value": "[parameters('clusterName')]"
+                    },
+                    "domainName": {
+                        "value": "[parameters('dnsZone')]"
+                    }
+                }
+            }
+        },
+        {
+            "condition": "[and(equals(parameters('cloudPakLicenseAgreement'), 'accept'), equals(parameters('installApacheSpark'), 'yes'))]",
+            "type": "Microsoft.Resources/deployments",
+            "apiVersion": "2019-05-01",
+            "name": "CloudPakSparkDeployment",
+            "dependsOn": [
+                "nfsVmDeployment",
+                "OpenShiftDeployment",
+                "[variables('deployOpenshiftExt')]",
+                "CloudPakWOSDeployment",
+                "OCSDeployment"
+            ],
+            "properties": {
+                "mode": "Incremental",
+                "templateLink": {
+                    "uri": "[variables('cloudPakDeploymentTemplateUrl')]",
+                    "contentVersion": "1.0.0.0"
+                },
+                "parameters": {
+                    "assembly": {
+                        "value": "spark"
+                    },
+                    "cloudPakDeploymentScriptUrl": {
+                        "value": "[variables('cloudPakDeploymentScriptUrl')]"
+                    },
+                    "cloudPakDeploymentScriptFileName": {
+                        "value": "[variables('cloudPakDeploymentScriptFileName')]"
+                    },
+                    "redHatTags": {
+                        "value": "[variables('redHatTags')]"
+                    },
+                    "adminUsername":{
+                        "value": "[parameters('adminUsername')]"
+                    },
+                    "ocuser": {
+                        "value": "[parameters('openshiftUsername')]"
+                    },
+                    "ocpassword": {
+                        "value": "[parameters('openshiftPassword')]"
+                    },
+                    "storageOption": {
+                        "value": "[parameters('storageOption')]"
+                    },
+                    "bastionHostname": {
+                        "value": "[parameters('bastionHostname')]"
+                    },
+                    "projectName": {
+                        "value": "[parameters('projectName')]"
+                    },
+                    "location": {
+                        "value": "[parameters('location')]"
+                    },
+                    "clusterName": {
+                        "value": "[parameters('clusterName')]"
+                    },
+                    "domainName": {
+                        "value": "[parameters('dnsZone')]"
+                    }
+                }
+            }
         }
     ],
     "outputs": {
         "Openshift Console URL": {
             "type": "string",
             "value": "[concat('https://console-openshift-console.apps.', parameters('clusterName'), '.', parameters('dnsZone'))]"
+        },
+        "Cloud Pak for Data URL": {
+            "type": "string",
+            "value": "[concat('https://', parameters('projectName'), '-cpd-', parameters('projectName'), '.apps.',  parameters('clusterName'), '.', parameters('dnsZone'))]"
         }
     }
 }
