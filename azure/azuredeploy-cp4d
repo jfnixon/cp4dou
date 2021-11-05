@@ -407,7 +407,7 @@ if ! az group exists --name ${rgName} | grep -q true; then
     aborting "failed to validate resource group '${rgName}'"
 fi
 
-templateUri="https://raw.githubusercontent.com/jfnixon/cp4d/master/azure/azuredeploy.json"
+templateUri="https://raw.githubusercontent.com/jfnixon/cp4dou/master/azure/azuredeploy.json"
 
 azArgs+="--resource-group ${rgName} "
 azArgs+="--template-uri ${templateUri} "

@@ -1,0 +1,1 @@
+oc patch deployment nfs-client-provisioner -p  '{"spec":{"template":{"spec":{"containers":[{"name": "nfs-client-provisioner", "image":"k8s.gcr.io/sig-storage/nfs-subdir-external-provisioner:v4.0.2"}]}}}}' -n kube-system
